@@ -1,21 +1,32 @@
 const express = require("express");
 const redis = require("redis");
 
-// Create redis client
 const client = redis.createClient({
-  host: "redis-server",
-  port: 6379,
+  socket: {
+    host: "redis-server",
+
+    port: 6379,
+  },
 });
 
 const app = express();
 
-client.set("number", 0);
+app.get("/", async (req, res) => {
+  await client.connect();
 
-app.get("/", (req, res) => {
-  client.set("number", Number.parseInt(client.get("number") + 1));
-  res.send(`숫자: ${client.get("number")}`);
+  let number = await client.get("number");
+
+  if (number === null) {
+    number = 0;
+  }
+
+  res.send("숫자가 1씩 올라갑니다. 숫자: " + number);
+
+  await client.set("number", parseInt(number) + 1);
+
+  await client.disconnect();
 });
 
 app.listen(8081, () => {
-  console.log("Server listening 8081...");
+  console.log("Server is listening 8081...");
 });
